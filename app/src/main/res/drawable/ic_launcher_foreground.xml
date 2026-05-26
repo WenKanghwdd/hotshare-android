@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="22" android:translateY="22">
+        <!-- 火焰图标 -->
+        <path
+            android:fillColor="#FF4FC3F7"
+            android:pathData="M32,4C32,4 28,20 20,28C12,36 8,44 8,52C8,64 16,72 24,72C28,72 32,70 36,68C36,68 34,64 34,60C34,56 32,52 28,48C24,44 22,38 22,32C22,24 26,16 32,4Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M36,40C40,44 42,48 42,52C42,56 40,60 36,64C32,60 30,56 30,52C30,48 32,44 36,40Z" />
+        <!-- "H" 字母 -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M16,18 L20,18 L20,30 L28,30 L28,18 L32,18 L32,48 L28,48 L28,34 L20,34 L20,48 L16,48 Z" />
+    </group>
+</vector>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>HotShare</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 HotShare</h1>
+            <p class="subtitle">热点直连 · 零公网 · 高速传输</p>
+        </header>
+
+        <!-- 服务器连接状态 -->
+        <div class="connection-bar" id="connectionBar">
+            <span class="dot connected" id="statusDot"></span>
+            <span id="statusText">正在连接...</span>
+            <a href="#" class="refresh-link" id="refreshBtn" onclick="location.reload()">⟳ 重连</a>
+        </div>
+
+        <!-- 上传区域 -->
+        <section class="upload-zone" id="dropZone">
+            <div class="drop-inner" id="dropInner">
+                <div class="upload-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                </div>
+                <p class="drop-text">拖拽文件到此处上传到手机</p>
+                <p class="drop-hint">或点击选择文件 · 支持任意类型</p>
+                <input type="file" id="fileInput" multiple hidden>
+                <button class="select-btn" id="selectBtn">📁 选择文件</button>
+            </div>
+            <div class="progress-container" id="progressContainer" hidden>
+                <div class="progress-info">
+                    <span id="progressFileName">上传中...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-speed" id="progressSpeed"></div>
+            </div>
+        </section>
+
+        <!-- 文件列表 -->
+        <section class="files-section">
+            <div class="section-header">
+                <h2>📂 手机端文件</h2>
+                <span class="file-count" id="fileCount">0 个文件</span>
+            </div>
+            <div class="file-list" id="fileList">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部信息 -->
+        <footer class="footer">
+            <p>HotShare — 文件直存在手机本地，不会上传到任何服务器</p>
+            <p class="privacy-badge">🔒 零公网 · 端到端局域网</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
