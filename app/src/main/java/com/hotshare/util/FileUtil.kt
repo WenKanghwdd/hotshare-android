@@ -3,11 +3,8 @@ package com.hotshare.util
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.provider.MediaStore
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.io.FileOutputStream
 
 object FileUtil {
 
@@ -43,5 +40,61 @@ object FileUtil {
             bytes < 1024 * 1024 * 1024 -> "%.1f MB".format(bytes / (1024.0 * 1024))
             else -> "%.2f GB".format(bytes / (1024.0 * 1024 * 1024))
         }
+    }
+
+    /**
+     * 通过 ContentResolver 将文件从 Content URI 复制到目标目录
+     */
+    suspend fun copyContentUriToDir(
+        context: Context,
+        uri: Uri,
+        targetDir: File
+    ): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val fileName = getFileName(context, uri) ?: "file_${System.currentTimeMillis()}"
+            val safeName = safeFileName(fileName)
+            val destFile = File(targetDir, safeName)
+
+            // 同名自动重命名
+            val finalFile = if (destFile.exists()) {
+                val base = safeName.substringBeforeLast(".")
+                val ext = safeName.substringAfterLast(".", "")
+                var n = 1
+                var candidate: File
+                do {
+                    candidate = File(targetDir, "${base}_($n).${ext}")
+                    n++
+                } while (candidate.exists())
+                candidate
+            } else {
+                destFile
+            }
+
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(finalFile).use { output ->
+                    input.copyTo(output, bufferSize = 64 * 1024)
+                }
+            }
+
+            android.util.Log.i("HotShare", "📤 文件已复制: ${finalFile.name} (${finalFile.length()} bytes)")
+            finalFile.name
+        } catch (e: Exception) {
+            android.util.Log.e("HotShare", "复制文件失败: $uri", e)
+            null
+        }
+    }
+
+    /**
+     * 从 Content URI 中提取原始文件名
+     */
+    private fun getFileName(context: Context, uri: Uri): String? {
+        var name: String? = null
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && cursor.moveToFirst()) {
+                name = cursor.getString(nameIndex)
+            }
+        }
+        return name
     }
 }

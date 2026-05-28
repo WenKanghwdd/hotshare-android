@@ -31,8 +31,8 @@
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                 </div>
-                <p class="drop-text">拖拽文件到此处上传到手机</p>
-                <p class="drop-hint">或点击选择文件 · 支持任意类型</p>
+                <p class="drop-text">拖拽文件/文件夹到此处上传到手机</p>
+                <p class="drop-hint">或点击选择文件 · 支持任意类型 · 支持文件夹拖拽</p>
                 <input type="file" id="fileInput" multiple hidden>
                 <button class="select-btn" id="selectBtn">📁 选择文件</button>
             </div>
@@ -48,11 +48,36 @@
             </div>
         </section>
 
+        <!-- 搜索 & 工具栏 -->
+        <div class="toolbar">
+            <div class="toolbar-search">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索文件名..." spellcheck="false">
+            </div>
+            <div class="toolbar-sort">
+                <select class="sort-select" id="sortSelect">
+                    <option value="-mtime">最近修改 ▼</option>
+                    <option value="mtime">最早修改 ▲</option>
+                    <option value="-name">文件名 A→Z</option>
+                    <option value="name">文件名 Z→A</option>
+                    <option value="-size">最大优先 ▼</option>
+                    <option value="size">最小优先 ▲</option>
+                </select>
+            </div>
+        </div>
+
         <!-- 文件列表 -->
         <section class="files-section">
             <div class="section-header">
-                <h2>📂 手机端文件</h2>
-                <span class="file-count" id="fileCount">0 个文件</span>
+                <div class="section-header-left">
+                    <h2>📂 手机端文件</h2>
+                    <span class="file-count" id="fileCount">0 个文件</span>
+                </div>
+                <div class="section-header-actions">
+                    <span class="selected-count" id="selectedCount"></span>
+                    <button class="tool-btn" id="selectAllBtn">全选</button>
+                    <button class="tool-btn zip-btn" id="downloadZipBtn" disabled>📦 打包下载</button>
+                </div>
             </div>
             <div class="file-list" id="fileList">
                 <div class="loading-state">
@@ -62,11 +87,48 @@
             </div>
         </section>
 
+        <!-- 回收站 -->
+        <section class="trash-section" id="trashSection">
+            <div class="trash-header" id="trashToggle">
+                <span class="toggle-icon">▶</span>
+                <h2>🗑️ 回收站</h2>
+                <span class="trash-count" id="trashCount">0 个文件</span>
+            </div>
+            <div class="trash-content">
+                <div class="trash-actions">
+                    <button class="empty-trash-btn" id="emptyTrashBtn" style="display:none;">清空回收站</button>
+                    <span class="trash-hint">删除的文件在此处可恢复，不会永久丢失</span>
+                </div>
+                <div class="file-list" id="trashList">
+                    <div class="empty-state">
+                        <div class="empty-icon">🗑️</div>
+                        <p>回收站为空</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- 底部信息 -->
         <footer class="footer">
             <p>HotShare — 文件直存在手机本地，不会上传到任何服务器</p>
             <p class="privacy-badge">🔒 零公网 · 端到端局域网</p>
         </footer>
+    </div>
+
+    <!-- 预览弹窗 -->
+    <div class="preview-overlay" id="previewOverlay">
+        <div class="preview-modal">
+            <div class="preview-header">
+                <span class="preview-filename" id="previewFileName"></span>
+                <div class="preview-header-actions">
+                    <a class="preview-download-btn" id="previewDownloadBtn" download>⬇ 下载</a>
+                    <button class="preview-close-btn" id="previewClose">✕</button>
+                </div>
+            </div>
+            <div class="preview-body" id="previewContent">
+                <div class="preview-loading">加载中...</div>
+            </div>
+        </div>
     </div>
 
     <script src="/static/app.js"></script>

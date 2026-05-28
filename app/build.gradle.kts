@@ -68,6 +68,16 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // ZXing — QR code 生成
+    implementation("com.google.zxing:core:3.5.3")
+
+    // CameraX — QR 码扫描
+    val cameraxVersion = "1.3.1"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

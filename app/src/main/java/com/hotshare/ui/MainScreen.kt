@@ -4,21 +4,28 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import com.hotshare.service.HotspotService
 import com.hotshare.util.FileUtil
 import com.hotshare.util.NetworkUtil
@@ -34,9 +43,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun MainScreen() {
@@ -55,12 +61,8 @@ fun MainScreen() {
                         serverIp = intent.getStringExtra("ip") ?: ""
                         port = intent.getIntExtra("port", 8080)
                     }
-                    "stopped" -> {
-                        isRunning = false
-                    }
-                    "error" -> {
-                        isRunning = false
-                    }
+                    "stopped" -> { isRunning = false }
+                    "error" -> { isRunning = false }
                 }
             }
         }
@@ -82,13 +84,17 @@ fun MainScreen() {
 
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Color(0xFF4FC3F7),
-            secondary = Color(0xFF81C784),
-            background = Color(0xFF121212),
-            surface = Color(0xFF1E1E1E),
-            onPrimary = Color.Black,
-            onBackground = Color.White,
-            onSurface = Color.White,
+            primary = Color(0xFF7DAFDD),
+            secondary = Color(0xFFD0ECF4),
+            tertiary = Color(0xFF315BB8),
+            background = Color(0xFF0D1B2A),
+            surface = Color(0xFF1B2838),
+            onPrimary = Color(0xFF0D1B2A),
+            onSecondary = Color(0xFF0D1B2A),
+            onBackground = Color(0xFFF8FAE7),
+            onSurface = Color(0xFFF8FAE7),
+            surfaceVariant = Color(0xFF243447),
+            onSurfaceVariant = Color(0xFFD0ECF4),
         )
     ) {
         Surface(
@@ -98,10 +104,11 @@ fun MainScreen() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
                 // 标题
                 Text(
@@ -113,90 +120,9 @@ fun MainScreen() {
                 Text(
                     text = "热点直连 · 零公网 · 高速传输",
                     fontSize = 14.sp,
-                    color = Color.Gray,
+                    color = Color(0xFFD0ECF4),
                     modifier = Modifier.padding(top = 4.dp)
                 )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // 状态卡片
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // 状态指示灯
-                        val statusColor = if (isRunning) Color(0xFF4CAF50) else Color(0xFF757575)
-                        val statusText = if (isRunning) "服务运行中" else "服务未启动"
-
-                        Box(
-                            modifier = Modifier
-                                .size(12.dp)
-                                .background(statusColor, RoundedCornerShape(6.dp))
-                        )
-                        Text(
-                            text = statusText,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = statusColor,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-
-                        if (isRunning) {
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // IP 地址
-                            Text(
-                                text = "访问地址",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = "http://$serverIp:$port",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // 操作提示
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = Color(0xFF2D2D2D)
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp)
-                                ) {
-                                    Text(
-                                        "📋 操作步骤",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        "1️⃣ 确保 Mac 已连接手机热点 Wi-Fi\n" +
-                                        "2️⃣ 打开浏览器访问上方地址\n" +
-                                        "3️⃣ 拖拽文件到网页上传/下载",
-                                        fontSize = 13.sp,
-                                        color = Color.LightGray,
-                                        lineHeight = 22.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -217,7 +143,7 @@ fun MainScreen() {
                         .height(52.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isRunning) Color(0xFFEF5350) else MaterialTheme.colorScheme.primary
+                        containerColor = if (isRunning) Color(0xFF315BB8) else MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text(
@@ -227,116 +153,275 @@ fun MainScreen() {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 文件发送到 Mac
                 if (isRunning) {
-                    val scope = rememberCoroutineScope()
-                    var copiedFiles by remember { mutableStateOf(listOf<String>()) }
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    // 文件选择器
-                    val filePickerLauncher = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.OpenMultipleDocuments()
-                    ) { uris: List<Uri> ->
-                        scope.launch {
-                            val dir = FileUtil.getReceiveDir(context)
-                            val newFiles = mutableListOf<String>()
-                            for (uri in uris) {
-                                val copied = copyToServerDir(context, uri, dir)
-                                if (copied != null) newFiles.add(copied)
-                            }
-                            copiedFiles = newFiles
-                            if (newFiles.isNotEmpty()) {
-                                Toast.makeText(context, "已添加 ${newFiles.size} 个文件", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // 文件列表（最近复制的先显示）
-                    val recentlyCopied = remember { mutableStateOf(listOf<String>()) }
-                    Button(
-                        onClick = {
-                            filePickerLauncher.launch(arrayOf("*/*"))
-                        },
+                    // === 连接信息卡片（含 QR 码） ===
+                    val url = "http://$serverIp:$port"
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF7B4FC3)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
-                        Text("📤 选择文件发送到 Mac", fontSize = 14.sp)
-                    }
-
-                    // 显示目录下已有的文件
-                    LaunchedEffect(isRunning) {
-                        while (isRunning) {
-                            val dir = FileUtil.getReceiveDir(context)
-                            val files = dir.listFiles()
-                                ?.filter { it.isFile }
-                                ?.sortedByDescending { it.lastModified() }
-                                ?.take(10)
-                                ?.map { "${it.name}  (${FileUtil.formatSize(it.length())})" }
-                                ?: emptyList()
-                            recentlyCopied.value = files
-                            kotlinx.coroutines.delay(3000)
-                        }
-                    }
-
-                    if (recentlyCopied.value.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF2D2D2D)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    "📄 最近文件",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color.LightGray
+                            // 状态指示
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(Color(0xFF7DAFDD), RoundedCornerShape(5.dp))
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                recentlyCopied.value.forEach { fileInfo ->
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    "服务运行中",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF7DAFDD)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // IP 地址（大号可点击复制）
+                            Text(
+                                text = "🌐 访问地址",
+                                fontSize = 12.sp,
+                                color = Color(0xFFD0ECF4)
+                            )
+                            Text(
+                                text = url,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .padding(top = 4.dp)
+                                    .clickable {
+                                        // 复制到剪贴板
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                                as android.content.ClipboardManager
+                                        val clip = android.content.ClipData.newPlainText("HotShare URL", url)
+                                        clipboard.setPrimaryClip(clip)
+                                        Toast.makeText(context, "📋 已复制链接", Toast.LENGTH_SHORT).show()
+                                    }
+                            )
+                            Text(
+                                text = "点击复制链接",
+                                fontSize = 11.sp,
+                                color = Color(0xFF7DAFDD).copy(alpha = 0.6f),
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // QR 码
+                            val qrBitmap = remember(url) { generateQrCode(url, 400) }
+                            if (qrBitmap != null) {
+                                Card(
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAE7))
+                                ) {
+                                    Image(
+                                        bitmap = qrBitmap.asImageBitmap(),
+                                        contentDescription = "HotShare QR Code",
+                                        modifier = Modifier
+                                            .size(200.dp)
+                                            .padding(8.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "📱 Mac 相机扫码自动打开",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFFD0ECF4),
+                                    modifier = Modifier.padding(top = 6.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // === 连接设备数 ===
+                            var connectionCount by remember { mutableStateOf(0) }
+                            var connectionIps by remember { mutableStateOf(listOf<String>()) }
+
+                            LaunchedEffect(isRunning) {
+                                while (isRunning) {
+                                    try {
+                                        val conn = HotspotService.instance?.getConnectionInfo()
+                                        connectionCount = conn?.first ?: 0
+                                        connectionIps = conn?.second ?: emptyList()
+                                    } catch (_: Exception) { }
+                                    kotlinx.coroutines.delay(3000)
+                                }
+                            }
+
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF315BB8).copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val dotColor = if (connectionCount > 0) Color(0xFF7DAFDD) else Color(0xFF7DAFDD)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(dotColor, RoundedCornerShape(4.dp))
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        fileInfo,
-                                        fontSize = 11.sp,
-                                        color = Color.Gray,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        text = when {
+                                            connectionCount == 0 -> "等待设备连接..."
+                                            connectionCount == 1 -> "1 台设备已连接"
+                                            else -> "$connectionCount 台设备已连接"
+                                        },
+                                        fontSize = 13.sp,
+                                        color = if (connectionCount > 0) Color(0xFFD0ECF4) else Color.Gray
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // 操作提示
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF1B2838)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp)
+                                ) {
+                                    Text(
+                                        "📋 操作步骤",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        "1️⃣ 确保 Mac 已连接手机热点 Wi-Fi\n" +
+                                        "2️⃣ Mac 浏览器打开上方地址\n" +
+                                        "3️⃣ 或用相机扫描二维码自动打开\n" +
+                                        "4️⃣ 拖拽文件/文件夹到网页即可传输",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFD0ECF4),
+                                        lineHeight = 20.sp
                                     )
                                 }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val dir = FileUtil.getReceiveDir(context)
-                    Text(
-                        text = "📁 文件保存到: ${dir.absolutePath}",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // === 扫描 Mac QR 码 ===
+                    var showScanner by remember { mutableStateOf(false) }
+
+                    if (showScanner) {
+                        androidx.compose.ui.window.Dialog(
+                            onDismissRequest = { showScanner = false },
+                            properties = androidx.compose.ui.window.DialogProperties(
+                                usePlatformDefaultWidth = false,
+                                dismissOnBackPress = true,
+                                dismissOnClickOutside = false
+                            )
+                        ) {
+                            QRScannerScreen(
+                                onScanResult = { url ->
+                                    showScanner = false
+                                    // 解析 hotshare:// 协议或直接取 URL
+                                    val finalUrl = url
+                                        .removePrefix("hotshare://mac?host=")
+                                        .let {
+                                            if (it.startsWith("http")) it
+                                            else "http://$it"
+                                        }
+                                    // 在浏览器中打开
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(finalUrl))
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "无法打开: $finalUrl", Toast.LENGTH_LONG).show()
+                                    }
+                                },
+                                onClose = { showScanner = false }
+                            )
+                        }
+                    }
+
+                    // 扫码按钮（始终显示）
+                    Button(
+                        onClick = { showScanner = true },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF315BB8))
+                    ) {
+                        Text("📷 扫描 Mac QR 码", fontSize = 14.sp)
+                    }
+
+                    // 权限提示
+                    if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) !=
+                        android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "💡 首次使用扫码需要授予相机权限，系统会自动弹出授权请求",
+                            fontSize = 11.sp,
+                            color = Color(0xFF315BB8).copy(alpha = 0.7f),
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // === 文件发送到 Mac ===
+                    FileSendSection(context)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // === 服务器目录文件管理 ===
+                    FileManagementSection(context)
+
+                } else {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // 未启动时的引导
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "👆 点击上方按钮启动服务",
+                                fontSize = 16.sp,
+                                color = Color(0xFFD0ECF4)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "启动后，Mac 连接手机热点即可访问",
+                                fontSize = 13.sp,
+                                color = Color(0xFF7DAFDD)
+                            )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // 底部版本信息
-                Text(
-                    text = "HotShare v1.0.0",
-                    fontSize = 12.sp,
-                    color = Color.DarkGray
-                )
-                Text(
-                    text = "局域网直连 · 零蜂窝流量",
-                    fontSize = 11.sp,
-                    color = Color.DarkGray
-                )
+                Text("HotShare v1.1.0", fontSize = 12.sp, color = Color(0xFF7DAFDD))
+                Text("局域网直连 · 零蜂窝流量", fontSize = 11.sp, color = Color(0xFF7DAFDD))
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -344,61 +429,216 @@ fun MainScreen() {
     }
 }
 
-// ====== 工具函数 ======
+// ====== 文件发送组件 ======
 
-/**
- * 将用户选择的文件通过 ContentResolver 拷贝到服务器目录
- * @return 复制后的文件名，失败返回 null
- */
-private suspend fun copyToServerDir(
-    context: Context,
-    uri: Uri,
-    targetDir: File
-): String? = withContext(Dispatchers.IO) {
-    try {
-        val fileName = getFileName(context, uri) ?: "file_${System.currentTimeMillis()}"
-        val safeName = FileUtil.safeFileName(fileName)
-        val destFile = File(targetDir, safeName)
+@Composable
+private fun FileSendSection(context: Context) {
+    val scope = rememberCoroutineScope()
+    var copiedFiles by remember { mutableStateOf(listOf<String>()) }
 
-        // 同名自动重命名
-        val finalFile = if (destFile.exists()) {
-            val base = safeName.substringBeforeLast(".")
-            val ext = safeName.substringAfterLast(".", "")
-            var n = 1
-            var candidate: File
-            do {
-                candidate = File(targetDir, "${base}_($n).${ext}")
-                n++
-            } while (candidate.exists())
-            candidate
-        } else {
-            destFile
-        }
-
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(finalFile).use { output ->
-                input.copyTo(output, bufferSize = 64 * 1024)
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris: List<Uri> ->
+        scope.launch {
+            val dir = FileUtil.getReceiveDir(context)
+            val newFiles = mutableListOf<String>()
+            for (uri in uris) {
+                val copied = FileUtil.copyContentUriToDir(context, uri, dir)
+                if (copied != null) newFiles.add(copied)
+            }
+            copiedFiles = newFiles
+            if (newFiles.isNotEmpty()) {
+                Toast.makeText(
+                    context,
+                    "📋 已复制 ${newFiles.size} 个文件到服务器目录，手机上的原文件已保留",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
+    }
 
-        android.util.Log.i("HotShare", "📤 文件已复制: ${finalFile.name} (${finalFile.length()} bytes)")
-        finalFile.name
-    } catch (e: Exception) {
-        android.util.Log.e("HotShare", "复制文件失败: $uri", e)
-        null
+    val recentlyCopied = remember { mutableStateOf(listOf<String>()) }
+
+    Button(
+        onClick = { filePickerLauncher.launch(arrayOf("*/*")) },
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF315BB8))
+    ) {
+        Text("📤 选择文件发送到 Mac", fontSize = 14.sp)
+    }
+
+    // 轮询最近复制的文件
+    LaunchedEffect(Unit) {
+        while (true) {
+            val dir = FileUtil.getReceiveDir(context)
+            val files = dir.listFiles()
+                ?.filter { it.isFile && !it.name.startsWith(".") }
+                ?.sortedByDescending { it.lastModified() }
+                ?.take(5)
+                ?.map { "${it.name}  (${FileUtil.formatSize(it.length())})" }
+                ?: emptyList()
+            recentlyCopied.value = files
+            kotlinx.coroutines.delay(3000)
+        }
+    }
+
+    if (recentlyCopied.value.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1B2838)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text("📄 最近发送", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color(0xFFD0ECF4))
+                Spacer(modifier = Modifier.height(4.dp))
+                recentlyCopied.value.forEach { info ->
+                    Text(info, fontSize = 11.sp, color = Color(0xFFD0ECF4), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+
+    val dir = FileUtil.getReceiveDir(context)
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = "📁 保存到: ${dir.absolutePath}",
+        fontSize = 11.sp,
+        color = Color(0xFFD0ECF4),
+        textAlign = TextAlign.Center
+    )
+}
+
+// ====== 文件管理组件 ======
+
+@Composable
+private fun FileManagementSection(context: Context) {
+    val scope = rememberCoroutineScope()
+    val dir = FileUtil.getReceiveDir(context)
+    var fileItems by remember { mutableStateOf(listOf<File>()) }
+
+    // 轮询文件列表
+    LaunchedEffect(Unit) {
+        while (true) {
+            fileItems = dir.listFiles()
+                ?.filter { it.isFile && !it.name.startsWith(".") }
+                ?.sortedByDescending { it.lastModified() }
+                ?: emptyList()
+            kotlinx.coroutines.delay(3000)
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "📂 文件管理",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "${fileItems.size} 个文件",
+                    fontSize = 12.sp,
+                    color = Color(0xFFD0ECF4)
+                )
+            }
+
+            if (fileItems.isEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("暂无文件", fontSize = 13.sp, color = Color(0xFFD0ECF4), modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                fileItems.take(15).forEach { file ->
+                    FileRow(file, onDelete = {
+                        scope.launch {
+                            file.delete()
+                            Toast.makeText(context, "🗑️ 已删除: ${file.name}", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                }
+                if (fileItems.size > 15) {
+                    Text(
+                        "... 还有 ${fileItems.size - 15} 个文件",
+                        fontSize = 11.sp,
+                        color = Color(0xFFD0ECF4),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
-/**
- * 从 Content URI 中提取原始文件名
- */
-private fun getFileName(context: Context, uri: Uri): String? {
-    var name: String? = null
-    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-        if (nameIndex >= 0 && cursor.moveToFirst()) {
-            name = cursor.getString(nameIndex)
+@Composable
+private fun FileRow(file: File, onDelete: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+    ) {
+        val icon = when (file.extension.lowercase()) {
+            "jpg", "jpeg", "png", "gif", "webp" -> "🖼️"
+            "mp4", "mov", "mkv" -> "🎬"
+            "mp3", "wav", "aac" -> "🎵"
+            "pdf" -> "📕"
+            "zip", "rar", "gz" -> "📦"
+            "apk" -> "📱"
+            "txt", "json" -> "📝"
+            else -> "📄"
+        }
+        Text(icon, fontSize = 16.sp)
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                file.name,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                FileUtil.formatSize(file.length()),
+                fontSize = 10.sp,
+                color = Color(0xFFD0ECF4)
+            )
+        }
+        TextButton(
+            onClick = onDelete,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text("🗑️", fontSize = 14.sp)
         }
     }
-    return name
+}
+
+// ====== QR 码生成 ======
+
+/**
+ * 使用 ZXing 生成 QR 码 Bitmap
+ */
+private fun generateQrCode(content: String, size: Int): Bitmap? {
+    return try {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, size, size)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+            }
+        }
+        bitmap
+    } catch (e: Exception) {
+        android.util.Log.e("HotShare", "QR code 生成失败", e)
+        null
+    }
 }

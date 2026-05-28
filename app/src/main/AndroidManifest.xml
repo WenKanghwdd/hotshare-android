@@ -27,6 +27,9 @@
     <!-- 不跟随系统休眠 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- QR 码扫描 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
